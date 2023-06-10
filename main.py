@@ -9,6 +9,8 @@ from model import *
 from trainer import Trainer
 from torchvision import transforms
 from unet import UNet
+from new_trainer import *
+import torch.optim as optim
 
 ## Parameters
 train_split = 0.8
@@ -45,6 +47,7 @@ dataloader_test = DataLoader(dataset=test_dataset,
 
 ## Build Model
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+print(device)
 # model = UNet3D(in_channels=in_channels, n_classes=n_classes).to(device)
 model = UNet(in_channels=1,
              out_channels=4,
@@ -57,17 +60,31 @@ model = UNet(in_channels=1,
 
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5, verbose=True)
 
 ## train model
-trainer = Trainer(model=model,
-                  device=device,
-                  criterion=criterion,
-                  optimizer=optimizer,
-                  training_DataLoader=dataloader_training,
-                  validation_DataLoader=dataloader_test,
-                  lr_scheduler=None,
-                  epochs=10,
-                  epoch=0,
-                  notebook=False)
+# trainer = Trainer(model=model,
+#                   device=device,
+#                   criterion=criterion,
+#                   optimizer=optimizer,
+#                   training_DataLoader=dataloader_training,
+#                   validation_DataLoader=dataloader_test,
+#                   lr_scheduler=None,
+#                   epochs=10,
+#                   epoch=0,
+#                   notebook=False)
 
-training_losses, validation_losses, lr_rates = trainer.run_trainer()
+# training_losses, validation_losses, lr_rates = trainer.run_trainer()
+
+train(model=model, 
+      train_loader = dataloader_training,
+      val_loader = dataloader_validation,
+      criterion=criterion,
+      optimizer=optimizer,
+      scheduler=scheduler,
+      device=device)
+
+test(model=model,
+     test_loader = dataloader_test,
+     criterion=criterion, 
+     device=device)
