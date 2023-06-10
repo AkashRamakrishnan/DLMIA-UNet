@@ -9,7 +9,7 @@ from model import *
 from trainer import Trainer
 from torchvision import transforms
 from unet import UNet
-from new_trainer import *
+from trainer import *
 import torch.optim as optim
 
 ## Parameters

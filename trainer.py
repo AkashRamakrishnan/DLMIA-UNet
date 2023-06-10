@@ -1,119 +1,98 @@
-import numpy as np
 import torch
+import torch.nn as nn
+import torch.optim as optim
+from tqdm import tqdm
 
+import matplotlib.pyplot as plt
 
-class Trainer:
-    def __init__(self,
-                 model: torch.nn.Module,
-                 device: torch.device,
-                 criterion: torch.nn.Module,
-                 optimizer: torch.optim.Optimizer,
-                 training_DataLoader: torch.utils.data.Dataset,
-                 validation_DataLoader: torch.utils.data.Dataset = None,
-                 lr_scheduler: torch.optim.lr_scheduler = None,
-                 epochs: int = 20,
-                 epoch: int = 0,
-                 notebook: bool = False
-                 ):
+def train(model, train_loader, val_loader, criterion, optimizer, scheduler, device, patience=3, num_epochs=20, save_path='best_model.pt'):
+    model.to(device)
+    best_loss = float('inf')
+    best_epoch = 0
+    no_improvement = 0
 
-        self.model = model
-        self.criterion = criterion
-        self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
-        self.training_DataLoader = training_DataLoader
-        self.validation_DataLoader = validation_DataLoader
-        self.device = device
-        self.epochs = epochs
-        self.epoch = epoch
-        self.notebook = notebook
+    train_losses = []
+    val_losses = []
 
-        self.training_loss = []
-        self.validation_loss = []
-        self.learning_rate = []
+    fig, ax = plt.subplots()  # Create a figure and axis object for the plot
 
-    def run_trainer(self):
+    for epoch in range(1, num_epochs + 1):
+        model.train()
+        total_loss = 0
+        print('** '*40)
+        print('Epoch [{}/{}]'.format(epoch, num_epochs))
+        print('Training')
+        for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
+            data, target = data.to(device), target.to(device)
+            data = data[None, :]
+            target = target.type(torch.LongTensor).to(device)
+            optimizer.zero_grad()
+            output = model(data)
+            loss = criterion(output, target)
+            loss.backward()
+            optimizer.step()
 
-        if self.notebook:
-            from tqdm.notebook import tqdm, trange
+            total_loss += loss.item()
+
+        avg_loss = total_loss / len(train_loader)
+        train_losses.append(avg_loss)
+        print('Epoch [{}/{}], Train Loss: {:.4f}'.format(epoch, num_epochs, avg_loss))
+        print('Validation')
+        val_loss, val_accuracy = test(model, val_loader, criterion, device)
+        val_losses.append(val_loss)
+        print('Epoch [{}/{}], Validation Loss: {:.4f}, Validation Accuracy: {:.2f}%'.format(epoch, num_epochs, val_loss, val_accuracy))
+
+        scheduler.step(val_loss)
+
+        if val_loss < best_loss:
+            best_loss = val_loss
+            best_epoch = epoch
+            torch.save(model.state_dict(), save_path)
+            no_improvement = 0
         else:
-            from tqdm import tqdm, trange
+            no_improvement += 1
+            if no_improvement >= patience:
+                print('Early stopping. No improvement in validation loss for {} epochs.'.format(no_improvement))
+                break
 
-        progressbar = trange(self.epochs, desc='Progress')
-        for i in progressbar:
-            """Epoch counter"""
-            self.epoch += 1  # epoch counter
+        # Update the plot after each epoch
+        ax.plot(range(1, epoch + 1), train_losses, label='Training Loss')
+        ax.plot(range(1, epoch + 1), val_losses, label='Validation Loss')
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Loss')
+        ax.set_title('Training and Validation Loss')
+        ax.legend()
+        plt.savefig('loss_plot.png')  # Save the plot as an image
 
-            """Training block"""
-            self._train()
+    print('Best model achieved at epoch {}'.format(best_epoch))
 
-            """Validation block"""
-            if self.validation_DataLoader is not None:
-                self._validate()
+def test(model, test_loader, criterion, device):
+    model.eval()
+    total_loss = 0
+    total_iou = 0
+    total_samples = 0
 
-            """Learning rate scheduler block"""
-            if self.lr_scheduler is not None:
-                if self.validation_DataLoader is not None and self.lr_scheduler.__class__.__name__ == 'ReduceLROnPlateau':
-                    self.lr_scheduler.batch(self.validation_loss[i])  # learning rate scheduler step with validation loss
-                else:
-                    self.lr_scheduler.batch()  # learning rate scheduler step
-        return self.training_loss, self.validation_loss, self.learning_rate
+    with torch.no_grad():
+        for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
+            data, target = data.to(device), target.to(device)
+            data = data[None, :]
+            target = target.type(torch.LongTensor).to(device)
+            output = model(data)
+            loss = criterion(output, target)
+            total_loss += loss.item()
 
-    def _train(self):
+            pred = torch.argmax(output, dim=1)
+            iou = compute_iou(pred, target)
+            total_iou += iou.item()
 
-        if self.notebook:
-            from tqdm.notebook import tqdm, trange
-        else:
-            from tqdm import tqdm, trange
+            total_samples += data.size(0)
 
-        self.model.train()  # train mode
-        train_losses = []  # accumulate the losses here
-        batch_iter = tqdm(enumerate(self.training_DataLoader), 'Training', total=len(self.training_DataLoader),
-                          leave=False)
+    avg_loss = total_loss / len(test_loader)
+    avg_iou = total_iou / total_samples
+    return avg_loss, avg_iou
 
-        for i, (x, y) in batch_iter:
-            inp, target = x.to(self.device), y.to(self.device)  # send to device (GPU or CPU)
-            inp = inp[None, :]
-            target = target.type(torch.LongTensor).to(self.device)
-            # print(inp.shape, target.shape)
-            self.optimizer.zero_grad()  # zerograd the parameters
-            out = self.model(inp)  # one forward pass
-            # print(out.shape)
-            loss = self.criterion(out, target)  # calculate loss
-            loss_value = loss.item()
-            train_losses.append(loss_value)
-            loss.backward()  # one backward pass
-            self.optimizer.step()  # update the parameters
-
-            batch_iter.set_description(f'Training: (loss {loss_value:.4f})')  # update progressbar
-
-        self.training_loss.append(np.mean(train_losses))
-        self.learning_rate.append(self.optimizer.param_groups[0]['lr'])
-
-        batch_iter.close()
-
-    def _validate(self):
-
-        if self.notebook:
-            from tqdm.notebook import tqdm, trange
-        else:
-            from tqdm import tqdm, trange
-
-        self.model.eval()  # evaluation mode
-        valid_losses = []  # accumulate the losses here
-        batch_iter = tqdm(enumerate(self.validation_DataLoader), 'Validation', total=len(self.validation_DataLoader),
-                          leave=False)
-
-        for i, (x, y) in batch_iter:
-            input, target = x.to(self.device), y.to(self.device)  # send to device (GPU or CPU)
-
-            with torch.no_grad():
-                out = self.model(input)
-                loss = self.criterion(out, target)
-                loss_value = loss.item()
-                valid_losses.append(loss_value)
-
-                batch_iter.set_description(f'Validation: (loss {loss_value:.4f})')
-
-        self.validation_loss.append(np.mean(valid_losses))
-
-        batch_iter.close()
+def compute_iou(pred, target):
+    intersection = torch.logical_and(pred, target).sum((1, 2, 3))
+    union = torch.logical_or(pred, target).sum((1, 2, 3))
+    iou = (intersection.float() + 1e-6) / (union.float() + 1e-6)
+    return iou.mean()
