@@ -24,7 +24,7 @@ def train(model, train_loader, val_loader, criterion, optimizer, scheduler, devi
         print('Training')
         for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
             data, target = data.to(device), target.to(device)
-            data = data[None, :]
+            data = data[:,None, :]
             target = target.type(torch.LongTensor).to(device)
             optimizer.zero_grad()
             output = model(data)
@@ -91,8 +91,17 @@ def test(model, test_loader, criterion, device):
     avg_iou = total_iou / total_samples
     return avg_loss, avg_iou
 
-def compute_iou(pred, target):
-    intersection = torch.logical_and(pred, target).sum((1, 2, 3))
-    union = torch.logical_or(pred, target).sum((1, 2, 3))
-    iou = (intersection.float() + 1e-6) / (union.float() + 1e-6)
-    return iou.mean()
+def compute_iou(pred, target, num_classes=4):
+    intersection = torch.logical_and(pred, target).sum((2, 3))
+    union = torch.logical_or(pred, target).sum((2, 3))
+    iou = torch.zeros(num_classes)
+    
+    for class_idx in range(num_classes):
+        class_intersection = intersection[:, class_idx]
+        class_union = union[:, class_idx]
+        
+        class_iou = (class_intersection.float() + 1e-6) / (class_union.float() + 1e-6)
+        iou[class_idx] = class_iou.mean()
+    
+    return iou
+

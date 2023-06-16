@@ -6,7 +6,6 @@ from skimage.transform import resize
 from dataset import *
 from transformations import *
 from model import *
-from trainer import Trainer
 from torchvision import transforms
 from unet import UNet
 from trainer import *
@@ -14,9 +13,9 @@ import torch.optim as optim
 
 ## Parameters
 train_split = 0.8
-train_bs = 1
-val_bs = 1
-test_bs = 16
+train_bs = 8
+val_bs = 4
+test_bs = 1
 in_channels = 1
 n_classes = 4
 data_transforms = transforms.Compose([transforms.Lambda(normalise), 
