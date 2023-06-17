@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 
-def train(model, train_loader, val_loader, criterion, optimizer, scheduler, device, patience=3, num_epochs=20, save_path='best_model.pt'):
+def train(model, train_loader, val_loader, criterion_1, optimizer, scheduler, device, num_classes=4, patience=3, num_epochs=20, save_path='best_model.pt'):
     model.to(device)
     best_loss = float('inf')
     best_epoch = 0
@@ -28,7 +28,10 @@ def train(model, train_loader, val_loader, criterion, optimizer, scheduler, devi
             target = target.type(torch.LongTensor).to(device)
             optimizer.zero_grad()
             output = model(data)
-            loss = criterion(output, target)
+            output_dice = torch.argmax(output, dim=1)
+            loss_1 = criterion_1(output, target)
+            loss_2 = dice_loss(output_dice, target, num_classes)
+            loss = 0.5*(loss_1+loss_2)
             loss.backward()
             optimizer.step()
 
@@ -38,9 +41,9 @@ def train(model, train_loader, val_loader, criterion, optimizer, scheduler, devi
         train_losses.append(avg_loss)
         print('Epoch [{}/{}], Train Loss: {:.4f}'.format(epoch, num_epochs, avg_loss))
         print('Validation')
-        val_loss, val_accuracy = test(model, val_loader, criterion, device)
+        val_loss, val_score = test(model, val_loader, criterion_1, device, num_classes)
         val_losses.append(val_loss)
-        print('Epoch [{}/{}], Validation Loss: {:.4f}, Validation Accuracy: {:.2f}%'.format(epoch, num_epochs, val_loss, val_accuracy))
+        print('Epoch [{}/{}], Validation Loss: {:.4f}, Validation dice score: {:.2f}'.format(epoch, num_epochs, val_loss, val_score))
 
         scheduler.step(val_loss)
 
@@ -56,7 +59,7 @@ def train(model, train_loader, val_loader, criterion, optimizer, scheduler, devi
                 break
 
         # Update the plot after each epoch
-        ax.plot(range(1, epoch + 1), train_losses, label='Training Loss')
+        # ax.plot(range(1, epoch + 1), train_losses, label='Training Loss')
         ax.plot(range(1, epoch + 1), val_losses, label='Validation Loss')
         ax.set_xlabel('Epoch')
         ax.set_ylabel('Loss')
@@ -66,30 +69,29 @@ def train(model, train_loader, val_loader, criterion, optimizer, scheduler, devi
 
     print('Best model achieved at epoch {}'.format(best_epoch))
 
-def test(model, test_loader, criterion, device):
+def test(model, test_loader, criterion_1, device, num_classes=4):
     model.eval()
     total_loss = 0
-    total_iou = 0
+    total_loss_2 = 0
     total_samples = 0
 
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
             data, target = data.to(device), target.to(device)
-            data = data[None, :]
+            data = data[:,None, :]
             target = target.type(torch.LongTensor).to(device)
             output = model(data)
-            loss = criterion(output, target)
+            output_dice = torch.argmax(output, dim=1)
+            loss_1 = criterion_1(output, target)
+            loss_2 = dice_loss(output_dice, target, num_classes)
+            loss = 0.5*(loss_1+loss_2)
             total_loss += loss.item()
-
-            pred = torch.argmax(output, dim=1)
-            iou = compute_iou(pred, target)
-            total_iou += iou.item()
-
+            total_loss_2 += loss_2.item()
             total_samples += data.size(0)
 
     avg_loss = total_loss / len(test_loader)
-    avg_iou = total_iou / total_samples
-    return avg_loss, avg_iou
+    dice_score = 1 - (total_loss_2 / total_samples)
+    return avg_loss, dice_score
 
 def compute_iou(pred, target, num_classes=4):
     intersection = torch.logical_and(pred, target).sum((2, 3))
@@ -104,4 +106,23 @@ def compute_iou(pred, target, num_classes=4):
         iou[class_idx] = class_iou.mean()
     
     return iou
+
+def dice_loss(pred_masks, true_masks, num_classes):
+    epsilon = 1e-7  # Small constant to avoid division by zero
+    
+    dice_scores = torch.zeros(num_classes, device=pred_masks.device)
+    
+    for class_id in range(num_classes):
+        pred_class = pred_masks == class_id
+        true_class = true_masks == class_id
+
+        intersection = (pred_class & true_class).sum()
+        pred_area = pred_class.sum()
+        true_area = true_class.sum()
+        
+        dice_score = (2.0 * intersection + epsilon) / (pred_area + true_area + epsilon)
+        dice_scores[class_id] = dice_score
+    
+    return 1 - dice_scores.mean()
+
 

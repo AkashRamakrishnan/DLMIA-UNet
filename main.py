@@ -10,11 +10,12 @@ from torchvision import transforms
 from unet import UNet
 from trainer import *
 import torch.optim as optim
+from loss import dice_loss
 
 ## Parameters
 train_split = 0.8
-train_bs = 8
-val_bs = 4
+train_bs = 2
+val_bs = 2
 test_bs = 1
 in_channels = 1
 n_classes = 4
@@ -45,7 +46,7 @@ dataloader_test = DataLoader(dataset=test_dataset,
                                  shuffle=True)
 
 ## Build Model
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 # model = UNet3D(in_channels=in_channels, n_classes=n_classes).to(device)
 model = UNet(in_channels=1,
@@ -57,7 +58,8 @@ model = UNet(in_channels=1,
              conv_mode='same',
              dim=3).to(device)
 
-criterion = torch.nn.CrossEntropyLoss()
+criterion_1 = torch.nn.CrossEntropyLoss()
+# criterion_2 = dice_loss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5, verbose=True)
 
@@ -78,7 +80,7 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience
 train(model=model, 
       train_loader = dataloader_training,
       val_loader = dataloader_validation,
-      criterion=criterion,
+      criterion_1=criterion_1,
       optimizer=optimizer,
       scheduler=scheduler,
       device=device)
