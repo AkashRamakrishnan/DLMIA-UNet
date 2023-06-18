@@ -2,10 +2,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+from torch.autograd import Variable
 
 import matplotlib.pyplot as plt
 
-def train(model, train_loader, val_loader, criterion_1, optimizer, scheduler, device, num_classes=4, patience=3, num_epochs=20, save_path='best_model.pt'):
+def train(model, train_loader, val_loader, optimizer, scheduler, device, num_classes=4, patience=3, num_epochs=20, save_path='best_model.pt', load_path=None):
     model.to(device)
     best_loss = float('inf')
     best_epoch = 0
@@ -15,6 +16,10 @@ def train(model, train_loader, val_loader, criterion_1, optimizer, scheduler, de
     val_losses = []
 
     fig, ax = plt.subplots()  # Create a figure and axis object for the plot
+    
+    if load_path is not None:
+        model.load_state_dict(torch.load(load_path))
+        print('Model loaded from', load_path)
 
     for epoch in range(1, num_epochs + 1):
         model.train()
@@ -29,9 +34,8 @@ def train(model, train_loader, val_loader, criterion_1, optimizer, scheduler, de
             optimizer.zero_grad()
             output = model(data)
             output_dice = torch.argmax(output, dim=1)
-            loss_1 = criterion_1(output, target)
-            loss_2 = dice_loss(output_dice, target, num_classes)
-            loss = 0.5*(loss_1+loss_2)
+            loss = dice_loss(output_dice, target, num_classes)
+            loss = Variable(loss.data, requires_grad=True)
             loss.backward()
             optimizer.step()
 
@@ -41,9 +45,9 @@ def train(model, train_loader, val_loader, criterion_1, optimizer, scheduler, de
         train_losses.append(avg_loss)
         print('Epoch [{}/{}], Train Loss: {:.4f}'.format(epoch, num_epochs, avg_loss))
         print('Validation')
-        val_loss, val_score = test(model, val_loader, criterion_1, device, num_classes)
+        val_loss = test(model, val_loader, device, num_classes)
         val_losses.append(val_loss)
-        print('Epoch [{}/{}], Validation Loss: {:.4f}, Validation dice score: {:.2f}'.format(epoch, num_epochs, val_loss, val_score))
+        print('Epoch [{}/{}], Validation Loss: {:.4f}'.format(epoch, num_epochs, val_loss))
 
         scheduler.step(val_loss)
 
@@ -59,7 +63,7 @@ def train(model, train_loader, val_loader, criterion_1, optimizer, scheduler, de
                 break
 
         # Update the plot after each epoch
-        # ax.plot(range(1, epoch + 1), train_losses, label='Training Loss')
+        ax.plot(range(1, epoch + 1), train_losses, label='Training Loss')
         ax.plot(range(1, epoch + 1), val_losses, label='Validation Loss')
         ax.set_xlabel('Epoch')
         ax.set_ylabel('Loss')
@@ -69,7 +73,7 @@ def train(model, train_loader, val_loader, criterion_1, optimizer, scheduler, de
 
     print('Best model achieved at epoch {}'.format(best_epoch))
 
-def test(model, test_loader, criterion_1, device, num_classes=4):
+def test(model, test_loader, device, num_classes=4):
     model.eval()
     total_loss = 0
     total_loss_2 = 0
@@ -82,16 +86,12 @@ def test(model, test_loader, criterion_1, device, num_classes=4):
             target = target.type(torch.LongTensor).to(device)
             output = model(data)
             output_dice = torch.argmax(output, dim=1)
-            loss_1 = criterion_1(output, target)
-            loss_2 = dice_loss(output_dice, target, num_classes)
-            loss = 0.5*(loss_1+loss_2)
+            loss = dice_loss(output_dice, target, num_classes)
             total_loss += loss.item()
-            total_loss_2 += loss_2.item()
             total_samples += data.size(0)
 
     avg_loss = total_loss / len(test_loader)
-    dice_score = 1 - (total_loss_2 / total_samples)
-    return avg_loss, dice_score
+    return avg_loss
 
 def compute_iou(pred, target, num_classes=4):
     intersection = torch.logical_and(pred, target).sum((2, 3))

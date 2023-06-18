@@ -10,7 +10,8 @@ class SegmentationDataSet(data.Dataset):
     def __init__(self,
                  data_dir,
                  train=True,
-                 transform=None
+                 transform=None,
+                 target_transform=None
                  ):
         self.train = train
         if self.train:
@@ -18,8 +19,9 @@ class SegmentationDataSet(data.Dataset):
         else:
             self.subdir = 'test'
         self.image_dir = os.path.join(data_dir, self.subdir, 'images')
-        self.target_dir = os.path.join(data_dir, self.subdir, 'images')
+        self.target_dir = os.path.join(data_dir, self.subdir, 'targets')
         self.transform = transform
+        self.target_transform = target_transform
         # self.inputs_dtype = torch.float32
         # self.targets_dtype = torch.long
         self.image_list = os.listdir(self.image_dir)
@@ -40,7 +42,9 @@ class SegmentationDataSet(data.Dataset):
         x, y = sitk.GetArrayFromImage(x), sitk.GetArrayFromImage(y)
         # Preprocessing
         if self.transform is not None:
-            x, y = self.transform(x), self.transform(y)
+            x = self.transform(x)
+        if self.target_transform is not None:
+            y = self.target_transform(y)
 
         # Typecasting
         # x, y = torch.from_numpy(x).type(self.inputs_dtype), torch.from_numpy(y).type(self.targets_dtype)

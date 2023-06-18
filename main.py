@@ -22,11 +22,14 @@ n_classes = 4
 data_transforms = transforms.Compose([transforms.Lambda(normalise), 
                                      transforms.Lambda(resize_image),
                                      transforms.Lambda(np_to_tensor)])
+
+target_transforms = transforms.Compose([transforms.Lambda(reshape_mask),
+                                     transforms.Lambda(np_to_tensor)])
 data_path = 'data/'
 
 ## Datasets
-train_dataset = SegmentationDataSet(data_path, train=True, transform=data_transforms)
-test_dataset = SegmentationDataSet(data_path, train=False, transform=data_transforms)
+train_dataset = SegmentationDataSet(data_path, train=True, transform=data_transforms, target_transform=target_transforms)
+test_dataset = SegmentationDataSet(data_path, train=False, transform=data_transforms, target_transform=target_transforms)
 train_size = int(train_split * len(train_dataset))
 val_size = len(train_dataset) - train_size
 train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_size, val_size])
@@ -80,12 +83,11 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience
 train(model=model, 
       train_loader = dataloader_training,
       val_loader = dataloader_validation,
-      criterion_1=criterion_1,
       optimizer=optimizer,
       scheduler=scheduler,
-      device=device)
+      device=device,
+      load_path='best_model.pt')
 
 test(model=model,
      test_loader = dataloader_test,
-     criterion=criterion, 
      device=device)
