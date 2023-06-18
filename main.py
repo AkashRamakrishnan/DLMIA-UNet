@@ -49,7 +49,8 @@ dataloader_test = DataLoader(dataset=test_dataset,
                                  shuffle=True)
 
 ## Build Model
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 print(device)
 # model = UNet3D(in_channels=in_channels, n_classes=n_classes).to(device)
 model = UNet(in_channels=1,
@@ -86,7 +87,7 @@ train(model=model,
       optimizer=optimizer,
       scheduler=scheduler,
       device=device,
-      load_path='best_model.pt')
+      load_path=None)
 
 test(model=model,
      test_loader = dataloader_test,

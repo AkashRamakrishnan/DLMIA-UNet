@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from torch.autograd import Variable
-
+from torchmetrics import Dice
 import matplotlib.pyplot as plt
 
 def train(model, train_loader, val_loader, optimizer, scheduler, device, num_classes=4, patience=3, num_epochs=20, save_path='best_model.pt', load_path=None):
@@ -34,7 +34,8 @@ def train(model, train_loader, val_loader, optimizer, scheduler, device, num_cla
             optimizer.zero_grad()
             output = model(data)
             output_dice = torch.argmax(output, dim=1)
-            loss = dice_loss(output_dice, target, num_classes)
+            dice = Dice(average='micro', num_classes=4).to(device)
+            loss = dice(output_dice, target)
             loss = Variable(loss.data, requires_grad=True)
             loss.backward()
             optimizer.step()
@@ -86,7 +87,8 @@ def test(model, test_loader, device, num_classes=4):
             target = target.type(torch.LongTensor).to(device)
             output = model(data)
             output_dice = torch.argmax(output, dim=1)
-            loss = dice_loss(output_dice, target, num_classes)
+            dice = Dice(average='micro', num_classes=4).to(device)
+            loss = dice(output_dice, target)
             total_loss += loss.item()
             total_samples += data.size(0)
 
