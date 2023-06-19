@@ -1,0 +1,39 @@
+ctit082
+	Adding nVidia Cuda Toolkit 10.1
+Gpu devices                 : 1
+Starting worker: 
+/tmp/slurmd/job220243/slurm_script: line 20: ./gpu_burn: No such file or directory
+Train Set:  160
+Validation Set:  40
+Test Set:  100
+cuda
+** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 
+Epoch [1/20]
+Training
+  0%|          | 0/20 [00:00<?, ?it/s]  0%|          | 0/20 [00:19<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/s3075451/DLMIA/DLMIA-UNet/main.py", line 84, in <module>
+    train(model=model, 
+    ^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/trainer.py", line 35, in train
+    output = model(data)
+             ^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/unet.py", line 377, in forward
+    x = module(before_pool, x)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/unet.py", line 265, in forward
+    merged_layer = self.concat(up_layer, cropped_encoder_layer)  # concatenation
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/unet.py", line 120, in forward
+    x = torch.cat((layer_1, layer_2), 1)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 2.00 GiB (GPU 0; 11.91 GiB total capacity; 10.57 GiB already allocated; 640.94 MiB free; 10.59 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF

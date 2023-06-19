@@ -14,8 +14,8 @@ from loss import dice_loss
 
 ## Parameters
 train_split = 0.8
-train_bs = 2
-val_bs = 2
+train_bs = 4
+val_bs = 1
 test_bs = 1
 in_channels = 1
 n_classes = 4
@@ -49,8 +49,8 @@ dataloader_test = DataLoader(dataset=test_dataset,
                                  shuffle=True)
 
 ## Build Model
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cpu")
 print(device)
 # model = UNet3D(in_channels=in_channels, n_classes=n_classes).to(device)
 model = UNet(in_channels=1,
@@ -89,6 +89,8 @@ train(model=model,
       device=device,
       load_path=None)
 
-test(model=model,
+loss = test(model=model,
      test_loader = dataloader_test,
      device=device)
+
+print(1 - loss)

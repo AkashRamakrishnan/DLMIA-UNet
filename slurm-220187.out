@@ -1,0 +1,13 @@
+ctit082
+	Adding nVidia Cuda Toolkit 10.1
+Gpu devices                 : 1
+Starting worker: 
+/tmp/slurmd/job220187/slurm_script: line 20: ./gpu_burn: No such file or directory
+Train Set:  160
+Validation Set:  40
+Test Set:  100
+cpu
+** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 
+Epoch [1/20]
+Training
+  0%|          | 0/80 [00:00<?, ?it/s]slurmstepd-ctit082: error: *** JOB 220187 ON ctit082 CANCELLED AT 2023-06-18T17:58:44 ***

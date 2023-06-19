@@ -9,7 +9,7 @@ def normalise(image):
     return image
 
 def resize_image(image):
-    new_depth = 40
+    new_depth = 16
     new_width = 256
     new_height = 256
     image = resize(image, (new_depth, new_width, new_height),anti_aliasing=True , order=5,mode='constant')
@@ -17,7 +17,7 @@ def resize_image(image):
 
 def reshape_mask(mask):
     # Specify the desired new shape
-    new_depth = 40
+    new_depth = 16
     new_width = 256
     new_height = 256
 

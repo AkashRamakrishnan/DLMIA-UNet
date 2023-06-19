@@ -1,0 +1,42 @@
+ctit082
+	Adding nVidia Cuda Toolkit 10.1
+Gpu devices                 : 1
+Starting worker: 
+/tmp/slurmd/job220189/slurm_script: line 20: ./gpu_burn: No such file or directory
+Train Set:  160
+Validation Set:  40
+Test Set:  100
+cuda
+** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 
+Epoch [1/20]
+Training
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:27<36:10, 27.47s/it]  1%|▏         | 1/80 [00:39<51:53, 39.41s/it]
+Traceback (most recent call last):
+  File "/home/s3075451/DLMIA/DLMIA-UNet/main.py", line 84, in <module>
+    train(model=model, 
+    ^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/trainer.py", line 35, in train
+    output = model(data)
+             ^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/unet.py", line 371, in forward
+    x, before_pooling = module(x)
+                        ^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/unet.py", line 180, in forward
+    y = self.act2(y)  # activation 2
+        ^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/activation.py", line 103, in forward
+    return F.relu(input, inplace=self.inplace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/functional.py", line 1457, in relu
+    result = torch.relu(input)
+             ^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 640.00 MiB (GPU 0; 11.91 GiB total capacity; 11.12 GiB already allocated; 50.94 MiB free; 11.16 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF

@@ -1,0 +1,43 @@
+ctit082
+	Adding nVidia Cuda Toolkit 10.1
+Gpu devices                 : 1
+Starting worker: 
+/tmp/slurmd/job220244/slurm_script: line 20: ./gpu_burn: No such file or directory
+Train Set:  160
+Validation Set:  40
+Test Set:  100
+cuda
+** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 
+Epoch [1/20]
+Training
+  0%|          | 0/40 [00:00<?, ?it/s]  2%|▎         | 1/40 [00:10<06:38, 10.21s/it]  2%|▎         | 1/40 [00:19<12:23, 19.07s/it]
+tensor(0.6977, device='cuda:0') tensor(0.3023, device='cuda:0') tensor([0.0364, 0.0600, 0.0582, 0.0608])
+Traceback (most recent call last):
+  File "/home/s3075451/DLMIA/DLMIA-UNet/main.py", line 84, in <module>
+    train(model=model, 
+    ^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/trainer.py", line 35, in train
+    output = model(data)
+             ^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/unet.py", line 377, in forward
+    x = module(before_pool, x)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/DLMIA/DLMIA-UNet/unet.py", line 270, in forward
+    y = self.conv2(y)  # convolution 2
+        ^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 613, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/s3075451/.conda/envs/DLMIA/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 608, in _conv_forward
+    return F.conv3d(
+           ^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 128.00 MiB (GPU 0; 11.91 GiB total capacity; 11.13 GiB already allocated; 60.94 MiB free; 11.15 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
